@@ -14,10 +14,11 @@ import (
 )
 
 func main() {
+	//loading of environment variables and host
 	Load()
 
 	host := Getenv("host", "localhost:9093")
-
+	//initialization of the reader
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{host},
 		Topic:    "location_events",
@@ -26,6 +27,7 @@ func main() {
 		MaxBytes: 10e6,
 	})
 	defer reader.Close()
+
 	realm := Getenv("realmName", "realmName")
 	client := gocloak.NewClient(Getenv("keycloakHost", "https://mycool.keycloak.instance"))
 	ctx := context.Background()
@@ -43,7 +45,7 @@ func main() {
 		if err != nil {
 			break
 		}
-
+		//unmarshal and creation of Groups in Keycloak
 		var event data.LocationEvent
 		json.Unmarshal(m.Value, &event)
 		if event.EventType == "Create" {
