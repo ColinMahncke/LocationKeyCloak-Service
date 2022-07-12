@@ -2,7 +2,10 @@ module locationKeycloakService
 
 go 1.18
 
-require github.com/segmentio/kafka-go v0.4.32
+require (
+	github.com/Nerzal/gocloak v1.0.0
+	github.com/segmentio/kafka-go v0.4.32
+)
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
@@ -15,7 +18,6 @@ require (
 )
 
 require (
-	github.com/Nerzal/gocloak v1.0.0
 	github.com/Nerzal/gocloak/v11 v11.2.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/joho/godotenv v1.4.0
