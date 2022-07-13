@@ -1,6 +1,6 @@
 ## Location Keycloak Service
 
-The service unmarshal kafka data and based on the data it creates groups and subgroups
+The service unmarshal kafka data and based on the data it creates/deletes groups and subgroups
 
 ## Environment variables
 
@@ -12,4 +12,4 @@ The service unmarshal kafka data and based on the data it creates groups and sub
 
 ## Function
 
-The service loads the environment variables build a connection to the host and starts a kafka reader. After that the service reads the configurable variables for the keycloak login. The incoming data from Kafka are converted and the service creates new groups and subgroups in Keycloak (if they aren't already exist).
+The service loads the environment variables build a connection to the host and starts a kafka reader. After that the service reads the configurable variables for the keycloak login. The incoming data from Kafka are converted and the service creates new groups and subgroups in Keycloak (if they aren't already exist). The Service can also delete groups based on the incoming kafka data (if there are matching groups).

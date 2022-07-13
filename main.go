@@ -47,18 +47,37 @@ func main() {
 		}
 		//unmarshal and creation of Groups in Keycloak
 		var event data.LocationEvent
-		json.Unmarshal(m.Value, &event)
+		err = json.Unmarshal(m.Value, &event) //TODO: Error handling
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
 		if event.EventType == "Create" {
 			fmt.Println("received new create message")
 			var entity data.Entity
-			json.Unmarshal(event.Entity, &entity)
+			err = json.Unmarshal(event.Entity, &entity) //TODO: Error handling
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
 			entity.Name = s.ToLower(entity.Name)
 			locationPath := entity.Name
 			searchLocation, _ := client.GetGroups(ctx, token.AccessToken, realm, gocloak.GetGroupsParams{Search: &locationPath})
 			if len(searchLocation) != 0 {
-				reader.CommitMessages(ctx, m)
-				fmt.Println("tried to create location that already exist")
-				continue
+				hasCreated := false
+				for _, subgroup := range *searchLocation[0].SubGroups {
+					if *subgroup.Name == entity.Name {
+						hasCreated = true
+						break
+					}
+
+				}
+				if hasCreated == true {
+					reader.CommitMessages(ctx, m)
+					fmt.Println("tried to create location that already exist")
+					continue
+				}
+
 			}
 
 			searchParent, _ := client.GetGroups(ctx, token.AccessToken, realm, gocloak.GetGroupsParams{Search: &parentName})
@@ -70,35 +89,54 @@ func main() {
 				newID, err := client.CreateChildGroup(ctx, token.AccessToken, realm, *searchParent[0].ID, gocloak.Group{Name: &entity.Name, Attributes: &attributes})
 				if err != nil {
 					fmt.Println(err)
-
+					continue
 				}
 				apiName := "api_" + entity.Name
-				_, _ = client.CreateChildGroup(ctx, token.AccessToken, realm, newID, gocloak.Group{Name: &apiName, Attributes: &attributes})
+				_, err = client.CreateChildGroup(ctx, token.AccessToken, realm, newID, gocloak.Group{Name: &apiName, Attributes: &attributes})
 				if err != nil {
 					fmt.Println(err)
+					continue
 				}
 				adminName := "admin_" + entity.Name
-				_, _ = client.CreateChildGroup(ctx, token.AccessToken, realm, newID, gocloak.Group{Name: &adminName, Attributes: &attributes})
+				_, err = client.CreateChildGroup(ctx, token.AccessToken, realm, newID, gocloak.Group{Name: &adminName, Attributes: &attributes})
 				if err != nil {
 					fmt.Println(err)
-
+					continue
 				}
 				reader.CommitMessages(ctx, m)
 			}
 		}
 		if event.EventType == "Delete" {
-			fmt.Println("received a new message")
+			fmt.Println("received new delete message")
 			var entity data.Entity
-			json.Unmarshal(event.Entity, &entity)
+			err = json.Unmarshal(event.Entity, &entity) //TODO: Error handling
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
 			entity.Name = s.ToLower(entity.Name)
 			locationPath := entity.Name
 
 			searchLocation, _ := client.GetGroups(ctx, token.AccessToken, realm, gocloak.GetGroupsParams{Search: &locationPath})
 			if len(searchLocation) != 0 {
-				client.DeleteGroup(ctx, token.AccessToken, realm, *searchLocation[0].ID)
-			}
-			reader.CommitMessages(ctx, m)
-		}
-	}
+				hasDeleted := false
+				for _, subgroup := range *searchLocation[0].SubGroups {
+					if *subgroup.Name == entity.Name {
+						err = client.DeleteGroup(ctx, token.AccessToken, realm, *subgroup.ID) //TODO: Error handling
+						if err != nil {
+							fmt.Println(err)
+							hasDeleted = true
+							break
+						}
+					}
+					if hasDeleted == false {
+						fmt.Println("tried to delete location that doesn't exist")
+					}
 
+				}
+				reader.CommitMessages(ctx, m)
+			}
+		}
+
+	}
 }
