@@ -9,3 +9,7 @@ The service unmarshal kafka datas and based on the data it creates groupes and s
 - user (config your keycloak user)
 - passwort (config your keycloak user password)
 - realmName (config your realmName)
+
+## Function
+
+The service loads the environment variables build a connection to the host and starts a kafka reader. After that the service reads the configurable variables for the keycloak login. The incoming data from Kafka are converted and the service creates new groups and subgroups in Keycloak (if they aren't already exist).
