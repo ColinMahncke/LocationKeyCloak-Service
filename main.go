@@ -50,11 +50,14 @@ func main() {
 			continue
 		}
 		if event.EventType == "Create" {
-			HandleCreate(client, event, ctx, *token, realm, *reader, m)
+			HandleCreate(event, *reader, m)
 		}
 		if event.EventType == "Delete" {
-			handleDelete(client, event, ctx, *token, realm, *reader, m)
+			HandleDelete(event, *reader, m)
 
+		}
+		if event.EventType == "Update" {
+			HandleUpdate(event, *reader, m)
 		}
 
 	}

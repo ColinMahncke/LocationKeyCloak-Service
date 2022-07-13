@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"locationKeycloakService/data"
@@ -12,10 +11,15 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-func HandleCreate(client gocloak.GoCloak, event data.LocationEvent, ctx context.Context, token gocloak.JWT, realm string, reader kafka.Reader, m kafka.Message) {
+func HandleCreate(event data.LocationEvent, reader kafka.Reader, m kafka.Message) {
+	client, ctx, token, realm, err := GetKeycloakClient()
+	if err != nil {
+		return
+	}
+
 	fmt.Println("received new create message")
 	var entity data.Entity
-	err := json.Unmarshal(event.Entity, &entity) //TODO: Error handling
+	err = json.Unmarshal(event.Entity, &entity) //TODO: Error handling
 	if err != nil {
 		fmt.Println(err)
 		return

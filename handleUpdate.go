@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"locationKeycloakService/data"
@@ -12,10 +11,16 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-func handleUpdate(client gocloak.GoCloak, event data.LocationEvent, ctx context.Context, token gocloak.JWT, realm string, reader kafka.Reader, m kafka.Message) {
-	fmt.Println("received new delete message")
+func HandleUpdate(event data.LocationEvent, reader kafka.Reader, m kafka.Message) {
+
+	client, ctx, token, realm, err := GetKeycloakClient()
+	if err != nil {
+		return
+	}
+
+	fmt.Println("received new update message")
 	var entity data.Entity
-	err := json.Unmarshal(event.Entity, &entity) //TODO: Error handling
+	err = json.Unmarshal(event.Entity, &entity) //TODO: Error handling
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -25,11 +30,16 @@ func handleUpdate(client gocloak.GoCloak, event data.LocationEvent, ctx context.
 	searchLocation, _ := client.GetGroups(ctx, token.AccessToken, realm, gocloak.GetGroupsParams{})
 	if len(searchLocation) != 0 {
 		hasUpdated := false
-		for _, subgroup := range *searchLocation[0].SubGroups {
+		for _, searchSubgroup := range *searchLocation[0].SubGroups {
+			subgroup, err := client.GetGroup(ctx, token.AccessToken, realm, *searchSubgroup.ID)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
 			locationIds := (*subgroup.Attributes)["locationId"]
 			if len(locationIds) != 0 && locationIds[0] == strconv.Itoa(entity.Id) {
 				*subgroup.Name = entity.Name
-				err = client.UpdateGroup(ctx, token.AccessToken, realm, subgroup)
+				err = client.UpdateGroup(ctx, token.AccessToken, realm, *subgroup)
 
 				if err != nil {
 					fmt.Println(err)
