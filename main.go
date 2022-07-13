@@ -50,7 +50,7 @@ func main() {
 		json.Unmarshal(m.Value, &event)
 		if event.EventType == "Create" {
 			fmt.Println("received new create message")
-			var entity data.CreateEntity
+			var entity data.Entity
 			json.Unmarshal(event.Entity, &entity)
 			entity.Name = s.ToLower(entity.Name)
 			locationPath := entity.Name
@@ -86,5 +86,19 @@ func main() {
 				reader.CommitMessages(ctx, m)
 			}
 		}
+		if event.EventType == "Delete" {
+			fmt.Println("received a new message")
+			var entity data.Entity
+			json.Unmarshal(event.Entity, &entity)
+			entity.Name = s.ToLower(entity.Name)
+			locationPath := entity.Name
+
+			searchLocation, _ := client.GetGroups(ctx, token.AccessToken, realm, gocloak.GetGroupsParams{Search: &locationPath})
+			if len(searchLocation) != 0 {
+				client.DeleteGroup(ctx, token.AccessToken, realm, *searchLocation[0].ID)
+			}
+			reader.CommitMessages(ctx, m)
+		}
 	}
+
 }
