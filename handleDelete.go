@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"locationKeycloakService/data"
+	"strconv"
 	s "strings"
 
 	"github.com/Nerzal/gocloak/v11"
@@ -20,13 +21,13 @@ func handleDelete(client gocloak.GoCloak, event data.LocationEvent, ctx context.
 		return
 	}
 	entity.Name = s.ToLower(entity.Name)
-	locationPath := entity.Name
 
-	searchLocation, _ := client.GetGroups(ctx, token.AccessToken, realm, gocloak.GetGroupsParams{Search: &locationPath})
+	searchLocation, _ := client.GetGroups(ctx, token.AccessToken, realm, gocloak.GetGroupsParams{})
 	if len(searchLocation) != 0 {
 		hasDeleted := false
 		for _, subgroup := range *searchLocation[0].SubGroups {
-			if *subgroup.Name == entity.Name {
+			locationIds := (*subgroup.Attributes)["locationId"]
+			if len(locationIds) != 0 && locationIds[0] == strconv.Itoa(entity.Id) {
 				err = client.DeleteGroup(ctx, token.AccessToken, realm, *subgroup.ID) //TODO: Error handling
 				hasDeleted = true
 				if err != nil {
